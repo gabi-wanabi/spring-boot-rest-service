@@ -1,47 +1,30 @@
-#
-# Set a variable that can be used in all stages.
-#
-ARG BUILD_HOME=/spring-boot-rest-service
+# using multistage docker build
+# ref: https://docs.docker.com/develop/develop-images/multistage-build/
 
-#
-# Gradle image for the build stage.
-#
-FROM gradle:jdk11 as build-image
-
-#
-# Set the working directory.
-#
-ARG BUILD_HOME
-ENV APP_HOME=$BUILD_HOME
+# temp container to build using gradle
+# FROM gradle:5.3.0-jdk-alpine AS TEMP_BUILD_IMAGE
+FROM gradle:7-jdk11 AS TEMP_BUILD_IMAGE
+ENV APP_HOME=/usr/app/
 WORKDIR $APP_HOME
+COPY build.gradle settings.gradle $APP_HOME
 
-#
-# Copy the Gradle config, source code, and static analysis config
-# into the build container.
-#
-COPY --chown=gradle:gradle build.gradle settings.gradle $APP_HOME/
-COPY --chown=gradle:gradle src $APP_HOME/src
-# COPY --chown=gradle:gradle config $APP_HOME/config
+COPY gradle $APP_HOME/gradle
+COPY --chown=gradle:gradle . /home/gradle/src
+USER root
+RUN chown -R gradle /home/gradle/src
 
-#
-# Build the application.
-#
-RUN gradle --no-daemon build
+RUN gradle build || return 0
+COPY . .
+RUN gradle clean build
 
-#
-# Java image for the application to run in.
-#
+# actual container
+# FROM openjdk:11-jre-slim
 FROM adoptopenjdk/openjdk11:alpine-jre
-# FROM openjdk:12-alpine
+ENV ARTIFACT_NAME=spring-boot-rest-service-0.0.1-SNAPSHOT.jar
+ENV APP_HOME=/usr/app/
 
-#
-# Copy the jar file in and name it app.jar.
-#
-ARG BUILD_HOME
-ENV APP_HOME=$BUILD_HOME
-COPY --from=build-image $APP_HOME/build/libs/spring-boot-rest-service-0.0.1-SNAPSHOT.jar spring-boot-rest-service.jar
+WORKDIR $APP_HOME
+COPY --from=TEMP_BUILD_IMAGE $APP_HOME/build/libs/$ARTIFACT_NAME .
 
-#
-# The command to run when the container starts.
-#
-ENTRYPOINT java -jar spring-boot-rest-service.jar
+EXPOSE 8080
+ENTRYPOINT exec java -jar ${ARTIFACT_NAME
