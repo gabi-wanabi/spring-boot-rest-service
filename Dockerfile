@@ -18,8 +18,8 @@ COPY . .
 RUN gradle clean build
 
 # actual container
-# FROM adoptopenjdk/openjdk11:alpine-jre
-FROM openjdk:11-jre-slim
+# FROM openjdk:11-jre-slim
+FROM adoptopenjdk/openjdk11:alpine-jre
 ENV ARTIFACT_NAME=spring-boot-rest-service-0.0.1-SNAPSHOT.jar
 ENV APP_HOME=/usr/app/
 
