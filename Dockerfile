@@ -1,10 +1,10 @@
 # temp container to build using gradle
 FROM gradle:7.0.2-jdk11 AS TEMP_BUILD_IMAGE
 WORKDIR /home/gradle/project
-COPY build.gradle /home/gradle/project
-COPY settings.gradle /home/gradle/project
-COPY gradle.properties /home/gradle/project
-COPY gradlew /home/gradle/project
+#COPY build.gradle /home/gradle/project
+#COPY settings.gradle /home/gradle/project
+#COPY gradle.properties /home/gradle/project
+#COPY gradlew /home/gradle/project
 #COPY gradle/wrapper/gradle-wrapper.jar /home/gradle/project/gradle/wrapper/gradle-wrapper.jar
 #COPY gradle/wrapper/gradle-wrapper.properties /home/gradle/project/gradle/wrapper/gradle-wrapper.properties
 COPY . /home/gradle/project
