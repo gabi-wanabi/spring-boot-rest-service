@@ -1,20 +1,15 @@
-# using multistage docker build
-# ref: https://docs.docker.com/develop/develop-images/multistage-build/
-
 # temp container to build using gradle
-# FROM gradle:5.3.0-jdk-alpine AS TEMP_BUILD_IMAGE
-FROM gradle:7-jdk11 AS TEMP_BUILD_IMAGE
-ENV APP_HOME=/usr/app/
-WORKDIR $APP_HOME
-COPY build.gradle settings.gradle $APP_HOME
+FROM gradle:7.0.2-jdk11 AS TEMP_BUILD_IMAGE
+WORKDIR /home/gradle/project
+COPY build.gradle /home/gradle/project
+COPY settings.gradle /home/gradle/project
+COPY gradle.properties /home/gradle/project
+COPY gradlew /home/gradle/project
+#COPY gradle/wrapper/gradle-wrapper.jar /home/gradle/project/gradle/wrapper/gradle-wrapper.jar
+#COPY gradle/wrapper/gradle-wrapper.properties /home/gradle/project/gradle/wrapper/gradle-wrapper.properties
+COPY . /home/gradle/project
 
-COPY gradle $APP_HOME/gradle
-COPY --chown=gradle:gradle . /home/gradle/src
-USER root
-RUN chown -R gradle /home/gradle/src
-
-RUN gradle build || return 0
-COPY . .
+#RUN ./gradlew build
 RUN gradle clean build
 
 # actual container
@@ -22,9 +17,8 @@ RUN gradle clean build
 FROM adoptopenjdk/openjdk11:alpine-jre
 ENV ARTIFACT_NAME=spring-boot-rest-service-0.0.1-SNAPSHOT.jar
 ENV APP_HOME=/usr/app/
-
 WORKDIR $APP_HOME
-COPY --from=TEMP_BUILD_IMAGE $APP_HOME/build/libs/$ARTIFACT_NAME .
+COPY --from=TEMP_BUILD_IMAGE /home/gradle/project/build/libs/$ARTIFACT_NAME .
 
 EXPOSE 8080
 ENTRYPOINT exec java -jar ${ARTIFACT_NAME}
